@@ -1,4 +1,4 @@
-package boom
+package utils
 
 import (
 	"math/rand"

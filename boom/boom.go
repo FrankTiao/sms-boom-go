@@ -4,6 +4,7 @@ import (
 	"github.com/gookit/color"
 	"github.com/panjf2000/ants/v2"
 	"github.com/schollz/progressbar/v3"
+	"sms-boom-go/configs"
 	"strings"
 	"sync"
 	"time"
@@ -45,9 +46,9 @@ func boom(apis *[]Api, getApis *[]string, phone []string, frequency, interval in
 
 	// 协程池
 	defer ants.Release()
-	apiPool, _ := ants.NewPoolWithFunc(PoolRunTimes, func(i interface{}) {
+	apiPool, _ := ants.NewPoolWithFunc(configs.PoolRunTimes, func(i interface{}) {
 		reqByAPI(i.(*Api), phone)
-		if ShowRequestLog == 0 {
+		if configs.ShowRequestLog == 0 {
 			_ = Progress.Add(1) // 进度条+1
 		}
 
@@ -56,9 +57,9 @@ func boom(apis *[]Api, getApis *[]string, phone []string, frequency, interval in
 	})
 	defer apiPool.Release()
 
-	getApiPool, _ := ants.NewPoolWithFunc(PoolRunTimes, func(i interface{}) {
+	getApiPool, _ := ants.NewPoolWithFunc(configs.PoolRunTimes, func(i interface{}) {
 		reqByGetAPI(i.(string), phone)
-		if ShowRequestLog == 0 {
+		if configs.ShowRequestLog == 0 {
 			_ = Progress.Add(1) // 进度条+1
 		}
 		ReqCount++   // 请求次数+1
@@ -100,7 +101,7 @@ func reqByAPI(api *Api, phone []string) {
 	for _, ph := range phone {
 		api.HandelApi(ph)
 		resp, err := api.Send()
-		if ShowRequestLog == 0 {
+		if configs.ShowRequestLog == 0 {
 			return
 		}
 
@@ -119,7 +120,7 @@ func reqByAPI(api *Api, phone []string) {
 func reqByGetAPI(api string, phone []string) {
 	for _, ph := range phone {
 		resp, err := SendByGetApi(api, ph)
-		if ShowRequestLog == 0 {
+		if configs.ShowRequestLog == 0 {
 			return
 		}
 

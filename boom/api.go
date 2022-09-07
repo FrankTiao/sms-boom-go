@@ -7,6 +7,8 @@ import (
 	"github.com/go-resty/resty/v2"
 	"io/ioutil"
 	"os"
+	"sms-boom-go/configs"
+	"sms-boom-go/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +47,7 @@ func (api *Api) HandelApi(phone string) {
 		he["Referer"] = api.Url
 	}
 
-	he["UserAgent"] = RandomUserAgent()
+	he["UserAgent"] = utils.RandomUserAgent()
 	headerJson, err := json.Marshal(he)
 	if err != nil {
 		headerJson = []byte(nil)
@@ -125,8 +127,8 @@ func replaceData(content, phone string, apiType int) string {
 
 // loadApi 加载 API
 func loadApi() (*[]Api, error) {
-	path := GetAppPath() + "/" + API
-	if !FileExists(path) {
+	path := utils.GetAppRuntimePath() + "/" + configs.API
+	if !utils.PathExists(path) {
 		err := UpdateApi()
 		if err != nil {
 			return nil, err
@@ -156,8 +158,8 @@ func loadApi() (*[]Api, error) {
 
 // loadGetApi 加载GET API
 func loadGetApi() (*[]string, error) {
-	path := GetAppPath() + "/" + GetAPI
-	if !FileExists(path) {
+	path := utils.GetAppRuntimePath() + "/" + configs.GetAPI
+	if !utils.PathExists(path) {
 		err := UpdateApi()
 		if err != nil {
 			return nil, err

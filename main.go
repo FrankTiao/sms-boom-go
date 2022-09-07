@@ -8,10 +8,21 @@ import (
 	"log"
 	"os"
 	"sms-boom-go/boom"
+	"sms-boom-go/scans"
+	"sms-boom-go/utils"
 	"strings"
 )
 
 var app *cli.App
+
+func init() {
+	// 创建AppData目录
+	_, _ = utils.DirExistsOrCreate(utils.GetAppDataConfigDir())
+	_, _ = utils.DirExistsOrCreate(utils.GetAppDataLogDir())
+
+	// 初始化log
+	utils.InitLog()
+}
 
 func main() {
 	welcome()
@@ -31,12 +42,12 @@ func main() {
 			Action: func(c *cli.Context) error {
 				scanner := bufio.NewScanner(os.Stdin)
 
-				phone := boom.ScanHandelByStringSlice(scanner, boom.ScanPhone)
-				frequency := boom.ScanHandelByInt(scanner, boom.ScanFrequency)
-				interval := boom.ScanHandelByInt(scanner, boom.ScanInterval)
-				coroutineCount := boom.ScanHandelByInt(scanner, boom.ScanCoroutine)
+				phone := scans.ScanHandelByStringSlice(scanner, scans.ScanPhone)
+				frequency := scans.ScanHandelByInt(scanner, scans.ScanFrequency)
+				interval := scans.ScanHandelByInt(scanner, scans.ScanInterval)
+				coroutineCount := scans.ScanHandelByInt(scanner, scans.ScanCoroutine)
 
-				if boom.Confirm(scanner, phone, frequency, interval, coroutineCount) {
+				if scans.Confirm(scanner, phone, frequency, interval, coroutineCount) {
 					err := boom.Start(phone, frequency, interval, coroutineCount)
 					if err != nil {
 						color.Error.Printf("轰炸失败: %s!\n", err.Error())
