@@ -25,6 +25,9 @@ func init() {
 }
 
 func main() {
+	defer func() {
+		utils.PanicHandler(recover())
+	}()
 	welcome()
 	chooseAction()
 

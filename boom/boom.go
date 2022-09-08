@@ -6,6 +6,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"log"
 	"sms-boom-go/configs"
+	"sms-boom-go/utils"
 	"sync"
 	"time"
 )
@@ -51,7 +52,7 @@ func boom(apis *[]Api, getApis *[]string, phone []string, frequency, interval in
 		_ = Progress.Add(1) // 进度条+1
 		ReqCount++          // 请求次数+1
 		ReqWg.Done()        // 协程池-1
-	})
+	}, ants.WithPanicHandler(utils.PanicHandler))
 	defer apiPool.Release()
 
 	getApiPool, _ := ants.NewPoolWithFunc(configs.PoolRunTimes, func(i interface{}) {
@@ -59,7 +60,7 @@ func boom(apis *[]Api, getApis *[]string, phone []string, frequency, interval in
 		_ = Progress.Add(1) // 进度条+1
 		ReqCount++          // 请求次数+1
 		ReqWg.Done()        // 协程池-1
-	})
+	}, ants.WithPanicHandler(utils.PanicHandler))
 	defer getApiPool.Release()
 
 	// 处理
