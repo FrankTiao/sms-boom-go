@@ -127,7 +127,7 @@ func replaceData(content, phone string, apiType int) string {
 
 // loadApi 加载 API
 func loadApi() (*[]Api, error) {
-	path := utils.GetAppRuntimePath() + "/" + configs.API
+	path := utils.GetAppDataConfigDir(configs.API)
 	if !utils.PathExists(path) {
 		err := UpdateApi()
 		if err != nil {
@@ -158,7 +158,7 @@ func loadApi() (*[]Api, error) {
 
 // loadGetApi 加载GET API
 func loadGetApi() (*[]string, error) {
-	path := utils.GetAppRuntimePath() + "/" + configs.GetAPI
+	path := utils.GetAppDataConfigDir(configs.GetAPI)
 	if !utils.PathExists(path) {
 		err := UpdateApi()
 		if err != nil {

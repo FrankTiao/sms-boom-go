@@ -4,8 +4,8 @@ import (
 	"github.com/gookit/color"
 	"github.com/panjf2000/ants/v2"
 	"github.com/schollz/progressbar/v3"
+	"log"
 	"sms-boom-go/configs"
-	"strings"
 	"sync"
 	"time"
 )
@@ -48,22 +48,17 @@ func boom(apis *[]Api, getApis *[]string, phone []string, frequency, interval in
 	defer ants.Release()
 	apiPool, _ := ants.NewPoolWithFunc(configs.PoolRunTimes, func(i interface{}) {
 		reqByAPI(i.(*Api), phone)
-		if configs.ShowRequestLog == 0 {
-			_ = Progress.Add(1) // 进度条+1
-		}
-
-		ReqCount++   // 请求次数+1
-		ReqWg.Done() // 协程池-1
+		_ = Progress.Add(1) // 进度条+1
+		ReqCount++          // 请求次数+1
+		ReqWg.Done()        // 协程池-1
 	})
 	defer apiPool.Release()
 
 	getApiPool, _ := ants.NewPoolWithFunc(configs.PoolRunTimes, func(i interface{}) {
 		reqByGetAPI(i.(string), phone)
-		if configs.ShowRequestLog == 0 {
-			_ = Progress.Add(1) // 进度条+1
-		}
-		ReqCount++   // 请求次数+1
-		ReqWg.Done() // 协程池-1
+		_ = Progress.Add(1) // 进度条+1
+		ReqCount++          // 请求次数+1
+		ReqWg.Done()        // 协程池-1
 	})
 	defer getApiPool.Release()
 
@@ -101,18 +96,14 @@ func reqByAPI(api *Api, phone []string) {
 	for _, ph := range phone {
 		api.HandelApi(ph)
 		resp, err := api.Send()
-		if configs.ShowRequestLog == 0 {
-			return
-		}
-
 		if err != nil {
-			log("error", api.Desc, err.Error())
+			log.Printf("API接口请求失败, 接口: %s, URL：%s, response: %s", api.Desc, api.Url, err)
 		} else {
 			body := []rune(string(resp.Body()))
 			if len(body) >= 50 {
 				body = body[:50]
 			}
-			log("info", api.Desc, string(body))
+			log.Printf("API接口请求成功, 接口: %s, URL：%s, response: %s", api.Desc, resp.Request.URL, string(body))
 		}
 	}
 }
@@ -120,34 +111,14 @@ func reqByAPI(api *Api, phone []string) {
 func reqByGetAPI(api string, phone []string) {
 	for _, ph := range phone {
 		resp, err := SendByGetApi(api, ph)
-		if configs.ShowRequestLog == 0 {
-			return
-		}
-
 		if err != nil {
-			log("error", "GetAPI接口", err.Error())
+			log.Printf("GetAPI接口请求失败，URL：%s, response: %s", api, err)
 		} else {
 			body := []rune(string(resp.Body()))
 			if len(body) >= 50 {
 				body = body[:50]
 			}
-			log("info", "GetAPI接口", string(body))
+			log.Printf("GetAPI接口请求成功，URL：%s, response: %s", resp.Request.URL, string(body))
 		}
 	}
-}
-
-func log(level, name, content string) {
-	colorLog := color.Info
-
-	_, _ = time.LoadLocation("Asia/Shanghai") // UTC+08:00
-	now := time.Now().Format("2006-01-02 15:04:05")
-
-	if level == "error" {
-		colorLog = color.Error
-	}
-
-	content = strings.ReplaceAll(content, "\\n", "")
-	content = strings.ReplaceAll(content, "\\r", "")
-
-	colorLog.Printf("[序号:%v]-[%v] %s - %v \n", ReqCount, now, name, content)
 }

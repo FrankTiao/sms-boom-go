@@ -34,10 +34,10 @@ func GetAppDataBaseDir(child ...string) string {
 
 // GetAppDataLogDir 获取日志目录路径
 func GetAppDataLogDir(child ...string) string {
-	return GetAppDataBaseDir(append(child, "logs")...)
+	return GetAppDataBaseDir(append([]string{"logs"}, child...)...)
 }
 
 // GetAppDataConfigDir 获取配置文件路径
 func GetAppDataConfigDir(child ...string) string {
-	return GetAppDataBaseDir(append(child, "configs")...)
+	return GetAppDataBaseDir(append([]string{"configs"}, child...)...)
 }
