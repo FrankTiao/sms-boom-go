@@ -1,4 +1,4 @@
-package boom
+package scans
 
 import (
 	"bufio"
