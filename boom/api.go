@@ -166,7 +166,6 @@ func loadApi() (*[]Api, error) {
 
 // loadGetApi 加载GET API
 func loadGetApi() (*[]string, error) {
-
 	path := utils.GetAppDataConfigDir(configs.GetAPI)
 	if !utils.PathExists(path) {
 		err := UpdateApi()
@@ -198,10 +197,13 @@ func loadGetApi() (*[]string, error) {
 
 // loadProxy 加载代理
 func loadProxy() ([]string, error) {
-	path := utils.GetAppDataProxyConfigDir(time.Now().Format("2006-01-02") + "_open.txt")
-	err := UpdateProxy(false)
-	if err != nil {
-		return nil, err
+	path := utils.GetAppDataProxyConfigDir(configs.CustomProxy)
+	if !utils.PathExists(path) { // 未启用自定义代理时使用免费代理
+		path = utils.GetAppDataProxyConfigDir(time.Now().Format("2006-01-02") + "_open.txt")
+		err := UpdateProxy(false)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	file, err := os.Open(path)
