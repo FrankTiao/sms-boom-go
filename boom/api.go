@@ -6,7 +6,9 @@ import (
 	"errors"
 	"github.com/go-resty/resty/v2"
 	"io/ioutil"
+	"math/rand"
 	"os"
+	"runtime"
 	"sms-boom-go/configs"
 	"sms-boom-go/utils"
 	"strconv"
@@ -75,9 +77,15 @@ func SendByGetApi(api, phone string) (*resty.Response, error) {
 func sendRequest(url, method, apiHeader, apiData string) (*resty.Response, error) {
 	client := resty.New()
 
+	if Proxy != nil {
+		s := rand.NewSource(time.Now().Unix())
+		r := rand.New(s)
+		client.SetProxy("http://" + Proxy[r.Intn(len(Proxy))])
+	}
+
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 	client.SetContentLength(true)
-	client.SetTimeout(time.Duration(3) * time.Second)
+	client.SetTimeout(time.Duration(10) * time.Second)
 
 	request := client.R()
 
@@ -158,6 +166,7 @@ func loadApi() (*[]Api, error) {
 
 // loadGetApi 加载GET API
 func loadGetApi() (*[]string, error) {
+
 	path := utils.GetAppDataConfigDir(configs.GetAPI)
 	if !utils.PathExists(path) {
 		err := UpdateApi()
@@ -185,4 +194,31 @@ func loadGetApi() (*[]string, error) {
 	}
 
 	return &apis, nil
+}
+
+// loadProxy 加载代理
+func loadProxy() ([]string, error) {
+	path := utils.GetAppDataProxyConfigDir(time.Now().Format("2006-01-02") + "_open.txt")
+	err := UpdateProxy(false)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	sy := "\n"
+	if runtime.GOOS == "windows" {
+		sy = "\r\n"
+	}
+
+	return strings.Split(string(content), sy), nil
 }

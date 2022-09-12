@@ -16,7 +16,9 @@ var ReqSum = 0
 var ReqCount = 0
 var ReqWg sync.WaitGroup
 
-func Start(phone []string, frequency, interval, coroutineCount int) error {
+var Proxy []string
+
+func Start(phone []string, frequency, interval int, enableProxy bool, coroutineCount int) error {
 	apis, err := loadApi()
 	if err != nil {
 		return err
@@ -28,6 +30,14 @@ func Start(phone []string, frequency, interval, coroutineCount int) error {
 		return err
 	}
 	color.Success.Printf("getApi.json 加载完成 接口数: %v\n", len(*getApis))
+
+	if enableProxy {
+		Proxy, err = loadProxy()
+		if err != nil {
+			return err
+		}
+		color.Success.Printf("http/https代理 加载完成 代理数: %v\n", len(Proxy))
+	}
 
 	boom(apis, getApis, phone, frequency, interval, coroutineCount)
 

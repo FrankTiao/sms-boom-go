@@ -77,12 +77,25 @@ func ScanInterval(scanner *bufio.Scanner) (int, error) {
 	return interval, nil
 }
 
+func ScanEnableProxy(scanner *bufio.Scanner) (bool, error) {
+	fmt.Print("请输入 Y/N 决定是否使用代理，默认否（伪装您的请求来源，提高短信发送成功率）: ")
+	scanner.Scan()
+	enableProxy := scanner.Text()
+	if len(enableProxy) <= 0 {
+		return false, nil
+	}
+
+	enable := len(enableProxy) == 0 || strings.ToLower(enableProxy) == "y" || strings.ToLower(enableProxy) == "yes"
+
+	return enable, nil
+}
+
 func ScanCoroutine(scanner *bufio.Scanner) (int, error) {
-	fmt.Print("请输入启动几个协程轰炸，默认1个（最终轰炸次数 = 协程数 * 轰炸轮数）: ")
+	fmt.Print("请输入启动几个协程轰炸，默认64个（最终轰炸次数 = 协程数 * 轰炸轮数）: ")
 	scanner.Scan()
 	input := scanner.Text()
 	if len(input) <= 0 {
-		return 1, nil
+		return 64, nil
 	}
 
 	count, err := strconv.Atoi(input)
@@ -129,15 +142,36 @@ func ScanHandelByInt(scanner *bufio.Scanner, fun func(scanner *bufio.Scanner) (i
 	return value
 }
 
-func Confirm(scanner *bufio.Scanner, phone []string, frequency, interval, coroutineCount int) bool {
+func ScanHandelByBool(scanner *bufio.Scanner, fun func(scanner *bufio.Scanner) (bool, error)) bool {
+	var err error
+	var value bool
+	for true {
+		value, err = fun(scanner)
+		if err == nil {
+			break
+		}
+		color.Warn.Println(err.Error())
+	}
+
+	return value
+}
+
+func Confirm(scanner *bufio.Scanner, phone []string, frequency, interval int, enableProxy bool, coroutineCount int) bool {
+	enable := "否"
+	if enableProxy {
+		enable = "是"
+	}
+
 	out := `
-请确认是否有误：
+请确认信息是否有误：
 ===================================================
  手 机 号：` + strings.Join(phone, ", ") + `
 ===================================================
  循环轰炸：` + strconv.Itoa(frequency) + ` 轮
 ===================================================
  轰炸间隔：` + strconv.Itoa(interval) + ` 秒
+===================================================
+ 使用代理：` + enable + `
 ===================================================
  协 程 数：` + strconv.Itoa(coroutineCount) + ` 个
 ===================================================
