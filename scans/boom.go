@@ -25,8 +25,8 @@ func CheckPhone(phone string) ([]string, error) {
 
 	var list []string
 	for _, v := range phoneList {
-		if len(v) > 0 {
-			list = append(list, v)
+		if len(strings.TrimSpace(v)) > 0 {
+			list = append(list, strings.TrimSpace(v))
 		}
 	}
 
