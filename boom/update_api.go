@@ -7,8 +7,8 @@ import (
 
 func UpdateApi() error {
 	// 从 github 获取最新接口
-	GETAPIJsonUrl := "https://hk1.monika.love/OpenEthan/SMSBoom/master/GETAPI.json"
-	APIJsonUrl := "https://hk1.monika.love/OpenEthan/SMSBoom/master/api.json"
+	GETAPIJsonUrl := "https://sms-boom-go.oss-cn-shanghai.aliyuncs.com/apis/GETAPI.json"
+	APIJsonUrl := "https://sms-boom-go.oss-cn-shanghai.aliyuncs.com/apis/api.json"
 
 	_, body, err := utils.HttpGet(GETAPIJsonUrl)
 	if err != nil {
