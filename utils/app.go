@@ -41,3 +41,8 @@ func GetAppDataLogDir(child ...string) string {
 func GetAppDataConfigDir(child ...string) string {
 	return GetAppDataBaseDir(append([]string{"configs"}, child...)...)
 }
+
+// GetAppDataProxyConfigDir 获取代理配置文件路径
+func GetAppDataProxyConfigDir(child ...string) string {
+	return GetAppDataBaseDir(append([]string{"configs", "proxy"}, child...)...)
+}

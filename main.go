@@ -17,6 +17,7 @@ var app *cli.App
 
 func init() {
 	// 创建AppData目录
+	_, _ = utils.DirExistsOrCreate(utils.GetAppDataProxyConfigDir())
 	_, _ = utils.DirExistsOrCreate(utils.GetAppDataConfigDir())
 	_, _ = utils.DirExistsOrCreate(utils.GetAppDataLogDir())
 
@@ -48,10 +49,11 @@ func main() {
 				phone := scans.ScanHandelByStringSlice(scanner, scans.ScanPhone)
 				frequency := scans.ScanHandelByInt(scanner, scans.ScanFrequency)
 				interval := scans.ScanHandelByInt(scanner, scans.ScanInterval)
+				enableProxy := scans.ScanHandelByBool(scanner, scans.ScanEnableProxy)
 				coroutineCount := scans.ScanHandelByInt(scanner, scans.ScanCoroutine)
 
-				if scans.Confirm(scanner, phone, frequency, interval, coroutineCount) {
-					err := boom.Start(phone, frequency, interval, coroutineCount)
+				if scans.Confirm(scanner, phone, frequency, interval, enableProxy, coroutineCount) {
+					err := boom.Start(phone, frequency, interval, enableProxy, coroutineCount)
 					if err != nil {
 						log.Printf("轰炸失败，err：%s", err)
 						color.Error.Printf("轰炸失败: %s!\n", err.Error())
@@ -73,6 +75,24 @@ func main() {
 					color.Error.Printf("接口保存失败: %s, 请关闭所有代理软件多尝试几次!\n", err.Error())
 				} else {
 					color.Success.Println("API接口已更新")
+				}
+
+				return nil
+			},
+		},
+		{
+			Name:    "update-proxy",
+			Aliases: []string{"3"},
+			Usage:   "更新http/https代理",
+			Action: func(c *cli.Context) error {
+				color.Info.Println("从免费代理网站中获取到的代理无法保证成功率，您可以使用自己的代理, 或是不使用代理")
+				color.Info.Println("正在从 openproxy.space 拉取最新代理...")
+				err := boom.UpdateProxy(true)
+				if err != nil {
+					log.Printf("代理保存失败，err：%s", err)
+					color.Error.Printf("代理保存失败: %s, 请关闭所有代理软件多尝试几次!\n", err.Error())
+				} else {
+					color.Success.Println("http/https代理已更新")
 				}
 
 				return nil
@@ -108,7 +128,8 @@ func chooseAction() {
 	main := `
 功能列表：（输入 exit 或按 Ctrl+C 退出）
 =============================================
- 1. 轰炸指定手机号      2. 更新API接口
+ 1. 轰炸指定手机号         2. 更新API接口
+ 3. 更新http/https代理
 =============================================
 `
 	color.Green.Println(main)
@@ -122,7 +143,7 @@ func action(c *cli.Context) error {
 
 L:
 	for {
-		fmt.Print("请输入数字选择要执行的操作: ")
+		fmt.Print("请输入序号选择要执行的操作: ")
 
 		//　读取用户输入
 		scanner := bufio.NewScanner(os.Stdin)
