@@ -29,16 +29,7 @@ func main() {
 }
 
 func buildContent(mainWin fyne.Window) fyne.CanvasObject {
-	// 进度条
-	progressBar := widget.NewProgressBar()
-	progressBar.Hide()
-
-	// 表单
-	form := buildForm(mainWin, progressBar)
-
 	//日志区域
-	//logArea := container.New(layout.NewVBoxLayout())
-
 	logArea := widget.NewMultiLineEntry()
 	logArea.Disable()
 	for i := 0; i < 10; i++ {
@@ -47,61 +38,19 @@ func buildContent(mainWin fyne.Window) fyne.CanvasObject {
 		//logArea.Add(widget.NewLabel(is + is + is + is + is + is + is + "\n"))
 	}
 
-	// 表单容器上下的间距
-	rect := canvas.NewRectangle(&color.NRGBA{R: 0, G: 0, B: 0, A: 0})
-	rect.SetMinSize(fyne.NewSize(10, 10))
-
-	return container.NewVSplit(
-		container.NewBorder(rect, rect, nil, nil, container.NewVBox(
-			form,
-			progressBar,
-		)),
-		container.NewScroll(logArea),
-	)
-}
-
-func buildForm(mainWin fyne.Window, progressBar *widget.ProgressBar) fyne.CanvasObject {
 	// 日志函数
 	logMessage := func(msg string) {
 		log.Println(msg)
 		//logArea.SetText(logArea.Text + msg + "\n")
 	}
 
-	// 输入表单
-	phoneEntry := widget.NewMultiLineEntry()
-	phoneEntry.SetPlaceHolder("请输入要轰炸的手机号")
+	// 进度条
+	progressBar := widget.NewProgressBar()
+	progressBar.Hide()
 
-	// 轰炸轮数
-	roundsEntry := widget.NewEntry()
-	roundsEntry.SetText("1")
-	roundsEntry.Validator = func(s string) error {
-		v, err := strconv.Atoi(s)
-		if err != nil || v < 1 {
-			return errors.New("只能输入大于1的数字")
-		}
-		return nil
-	}
-
-	// 每轮轰炸间隔
-	intervalEntry := widget.NewEntry()
-	intervalEntry.SetText("60")
-	intervalEntry.Validator = func(s string) error {
-		v, err := strconv.Atoi(s)
-		if err != nil || v < 1 {
-			return errors.New("只能输入大于1的数字")
-		}
-		return nil
-	}
-
-	//表单布局
-	return &widget.Form{
-		Items: []*widget.FormItem{
-			{Text: "手 机 号：", Widget: phoneEntry, HintText: "多个手机号时使用一个空格分隔"},
-			{Text: "轰炸轮数：", Widget: roundsEntry, HintText: "对每个手机号轰炸几轮，默认1轮"},
-			{Text: "轰炸间隔：", Widget: intervalEntry, HintText: "每轮轰炸结束后休息几秒，默认60秒"},
-		},
-		SubmitText: "开始轰炸",
-		OnSubmit: func() {
+	// 表单
+	form := buildForm(func(phoneEntry, roundsEntry, intervalEntry *widget.Entry) func() {
+		return func() {
 			phones := strings.Split(phoneEntry.Text, "\n")
 			var filteredPhones []string
 			for _, phone := range phones {
@@ -161,7 +110,58 @@ func buildForm(mainWin fyne.Window, progressBar *widget.ProgressBar) fyne.Canvas
 				roundsEntry.Enable()
 				intervalEntry.Enable()
 			}()
+		}
+	})
+
+	// 表单容器上下的间距
+	rect := canvas.NewRectangle(&color.NRGBA{R: 0, G: 0, B: 0, A: 0})
+	rect.SetMinSize(fyne.NewSize(10, 10))
+
+	return container.NewVSplit(
+		container.NewBorder(rect, rect, nil, nil, container.NewVBox(
+			form,
+			progressBar,
+		)),
+		container.NewScroll(logArea),
+	)
+}
+
+func buildForm(onSubmitFun func(phone, rounds, interval *widget.Entry) func()) fyne.CanvasObject {
+	// 输入表单
+	phoneEntry := widget.NewMultiLineEntry()
+	phoneEntry.SetPlaceHolder("请输入要轰炸的手机号")
+
+	// 轰炸轮数
+	roundsEntry := widget.NewEntry()
+	roundsEntry.SetText("1")
+	roundsEntry.Validator = func(s string) error {
+		v, err := strconv.Atoi(s)
+		if err != nil || v < 1 {
+			return errors.New("只能输入大于1的数字")
+		}
+		return nil
+	}
+
+	// 每轮轰炸间隔
+	intervalEntry := widget.NewEntry()
+	intervalEntry.SetText("60")
+	intervalEntry.Validator = func(s string) error {
+		v, err := strconv.Atoi(s)
+		if err != nil || v < 1 {
+			return errors.New("只能输入大于1的数字")
+		}
+		return nil
+	}
+
+	//表单布局
+	return &widget.Form{
+		Items: []*widget.FormItem{
+			{Text: "手 机 号：", Widget: phoneEntry, HintText: "多个手机号时使用一个空格分隔"},
+			{Text: "轰炸轮数：", Widget: roundsEntry, HintText: "对每个手机号轰炸几轮，默认1轮"},
+			{Text: "轰炸间隔：", Widget: intervalEntry, HintText: "每轮轰炸结束后休息几秒，默认60秒"},
 		},
+		SubmitText: "开始轰炸",
+		OnSubmit:   onSubmitFun(phoneEntry, roundsEntry, intervalEntry),
 		CancelText: "重置",
 		OnCancel: func() {
 			phoneEntry.SetText("")
