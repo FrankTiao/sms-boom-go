@@ -53,15 +53,24 @@ func (w *MainWindow) buildContent() fyne.CanvasObject {
 	rect := canvas.NewRectangle(&color.NRGBA{R: 0, G: 0, B: 0, A: 0})
 	rect.SetMinSize(fyne.NewSize(10, 10))
 
-	//日志区域
+	// 日志区域
+	logMsg := ""
 	logArea := widget.NewMultiLineEntry()
-	logArea.Disable()
+
+	//logArea.Disable() // Disable 方法会影响字体颜色，视觉效果不好
+	logArea.OnChanged = func(s string) { // 使用 OnChanged 事件模拟 Disable 的禁止输入效果
+		if logMsg != s {
+			logArea.SetText(logMsg)
+		}
+	}
 
 	// 日志函数
 	logMessage := func(msg string) {
 		log.Println(msg)
-		logArea.SetText(msg + "\n" + logArea.Text)
+		logMsg = msg + "\n" + logArea.Text
+		logArea.SetText(logMsg)
 	}
+	logMessage("欢迎使用 SMS Boom Go 短信轰炸器\n")
 
 	// 进度条
 	progressBar := widget.NewProgressBar()
