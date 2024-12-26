@@ -182,12 +182,32 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 		return nil
 	}
 
+	// 协 程 数
+	ccEntry := widget.NewEntry()
+	ccEntry.SetText("8")
+	ccEntry.Disable()
+	ccSlider := widget.NewSlider(0, 128)
+	ccSlider.Step = 8
+	ccSlider.SetValue(8)
+	ccSlider.OnChanged = func(f float64) {
+		if f <= 0 {
+			ccEntry.SetText("不启用")
+		} else {
+			ccEntry.SetText(fmt.Sprintf("%d", int(f)))
+		}
+	}
+
 	// 表单布局
 	form := &widget.Form{
 		Items: []*widget.FormItem{
 			{Text: "手 机 号：", Widget: phoneEntry, HintText: "多个手机号时每行一个"},
 			{Text: "轰炸轮数：", Widget: roundsEntry, HintText: "对每个手机号轰炸几轮，默认1轮"},
 			{Text: "轰炸间隔：", Widget: intervalEntry, HintText: "每轮轰炸结束后休息几秒，默认60秒"},
+			{Text: "协 程 数：", Widget: container.New(&layouts.RowRatioLayout{
+				Interval: 10,
+				Ratio:    []int{2, 10},
+			}, ccEntry, ccSlider), HintText: "启用多个协程轰炸，默认8个"},
+			//{Text: "协 程 数：", Widget: container.NewVBox(widget.NewLabel("8"), ccSlider), HintText: "启用多个协程轰炸，默认8个"},
 		},
 		SubmitText: "开始轰炸",
 		CancelText: "重置",
@@ -195,6 +215,7 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 			phoneEntry.SetText("")
 			roundsEntry.SetText("1")
 			intervalEntry.SetText("60")
+			ccSlider.SetValue(8)
 		},
 	}
 
