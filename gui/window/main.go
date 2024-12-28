@@ -11,15 +11,17 @@ import (
 	"image/color"
 	"log"
 	"sms-boom-go/gui/layouts"
+	"sms-boom-go/gui/widgets"
 	"strconv"
 	"strings"
 	"time"
 )
 
-type MainWindow struct {
-	app fyne.App
-	win fyne.Window
-}
+type onSubmitFun func(
+	from *widget.Form,
+	phone *widget.Entry,
+	rounds, interval, ccEntry *widgets.NumericalEntry,
+) func()
 
 type FormData struct {
 	Phones   []string
@@ -27,10 +29,15 @@ type FormData struct {
 	Interval int
 }
 
+type MainWindow struct {
+	app fyne.App
+	win fyne.Window
+}
+
 // NewMainWindow 创建并初始化主窗口
 func NewMainWindow(app fyne.App) *MainWindow {
 	win := app.NewWindow("SMS Boom Go 短信轰炸器")
-	win.Resize(fyne.NewSize(700, 500))
+	win.Resize(fyne.NewSize(700, 600))
 	win.CenterOnScreen()
 
 	mainWin := &MainWindow{
@@ -50,7 +57,7 @@ func (w *MainWindow) ShowAndRun() {
 // buildContent 构建窗口内容
 func (w *MainWindow) buildContent() fyne.CanvasObject {
 	// 表单容器上下的间距
-	rect := canvas.NewRectangle(&color.NRGBA{R: 0, G: 0, B: 0, A: 0})
+	rect := canvas.NewRectangle(color.Transparent)
 	rect.SetMinSize(fyne.NewSize(10, 10))
 
 	// 日志区域
@@ -79,7 +86,6 @@ func (w *MainWindow) buildContent() fyne.CanvasObject {
 			log.Printf("确定要取消吗? %v\n", b)
 		}, w.win)
 	})
-
 	progressBarCon := container.NewBorder(rect, nil, nil, nil, container.New(
 		&layouts.RowRatioLayout{
 			Interval: 8,
@@ -91,7 +97,7 @@ func (w *MainWindow) buildContent() fyne.CanvasObject {
 	progressBarCon.Hide()
 
 	// 表单
-	form := w.buildForm(func(form *widget.Form, phoneEntry, roundsEntry, intervalEntry *widget.Entry) func() {
+	form := w.buildForm(func(form *widget.Form, phoneEntry *widget.Entry, roundsEntry, intervalEntry, ccEntry *widgets.NumericalEntry) func() {
 		return func() {
 			// 手机号
 			phones := strings.Split(phoneEntry.Text, "\n")
@@ -135,7 +141,7 @@ func (w *MainWindow) buildContent() fyne.CanvasObject {
 			// 此处一定要开启协程处理，否则会阻塞其他组件的事件
 			go func() {
 				// 开始轰炸
-				startBoom(form, formData, progressBar, logMessage)
+				startBoom(formData, progressBar, logMessage)
 
 				// 恢复表单、隐藏进度条
 				progressBarCon.Hide()
@@ -150,18 +156,19 @@ func (w *MainWindow) buildContent() fyne.CanvasObject {
 			form,
 			progressBarCon,
 		)),
-		container.NewScroll(logArea),
+		widgets.NewLoggerView(nil, nil),
 	)
 }
 
 // buildForm 构建表单组件
-func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds, interval *widget.Entry) func()) fyne.CanvasObject {
+func (w *MainWindow) buildForm(onSubmitFun onSubmitFun) fyne.CanvasObject {
+
 	// 输入表单
 	phoneEntry := widget.NewMultiLineEntry()
 	phoneEntry.SetPlaceHolder("请输入要轰炸的手机号")
 
 	// 轰炸轮数
-	roundsEntry := widget.NewEntry()
+	roundsEntry := widgets.NewNumericalEntry()
 	roundsEntry.SetText("1")
 	roundsEntry.Validator = func(s string) error {
 		v, err := strconv.Atoi(s)
@@ -172,7 +179,7 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 	}
 
 	// 每轮轰炸间隔
-	intervalEntry := widget.NewEntry()
+	intervalEntry := widgets.NewNumericalEntry()
 	intervalEntry.SetText("60")
 	intervalEntry.Validator = func(s string) error {
 		v, err := strconv.Atoi(s)
@@ -183,18 +190,20 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 	}
 
 	// 协 程 数
-	ccEntry := widget.NewEntry()
-	ccEntry.SetText("8")
-	ccEntry.Disable()
-	ccSlider := widget.NewSlider(0, 128)
-	ccSlider.Step = 8
-	ccSlider.SetValue(8)
-	ccSlider.OnChanged = func(f float64) {
-		if f <= 0 {
-			ccEntry.SetText("不启用")
-		} else {
-			ccEntry.SetText(fmt.Sprintf("%d", int(f)))
+	ccEntry := widgets.NewNumericalEntry()
+	ccEntry.SetText("64")
+	ccEntry.Validator = func(s string) error {
+		v, err := strconv.Atoi(s)
+		if err != nil {
+			return errors.New("协程数只能输入数字")
 		}
+		if v < 0 {
+			return errors.New("协程数不能小于0")
+		}
+		if v > 512 {
+			return errors.New("协程数不能大于512，开启过多会对您的电脑造成较大压力")
+		}
+		return nil
 	}
 
 	// 表单布局
@@ -203,11 +212,7 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 			{Text: "手 机 号：", Widget: phoneEntry, HintText: "多个手机号时每行一个"},
 			{Text: "轰炸轮数：", Widget: roundsEntry, HintText: "对每个手机号轰炸几轮，默认1轮"},
 			{Text: "轰炸间隔：", Widget: intervalEntry, HintText: "每轮轰炸结束后休息几秒，默认60秒"},
-			{Text: "协 程 数：", Widget: container.New(&layouts.RowRatioLayout{
-				Interval: 10,
-				Ratio:    []int{2, 10},
-			}, ccEntry, ccSlider), HintText: "启用多个协程轰炸，默认8个"},
-			//{Text: "协 程 数：", Widget: container.NewVBox(widget.NewLabel("8"), ccSlider), HintText: "启用多个协程轰炸，默认8个"},
+			{Text: "协 程 数：", Widget: ccEntry, HintText: "启用多个协程同时轰炸，默认64个"},
 		},
 		SubmitText: "开始轰炸",
 		CancelText: "重置",
@@ -215,16 +220,16 @@ func (w *MainWindow) buildForm(onSubmitFun func(from *widget.Form, phone, rounds
 			phoneEntry.SetText("")
 			roundsEntry.SetText("1")
 			intervalEntry.SetText("60")
-			ccSlider.SetValue(8)
+			ccEntry.SetText("64")
 		},
 	}
 
-	form.OnSubmit = onSubmitFun(form, phoneEntry, roundsEntry, intervalEntry)
+	form.OnSubmit = onSubmitFun(form, phoneEntry, roundsEntry, intervalEntry, ccEntry)
 
 	return form
 }
 
-func startBoom(form *widget.Form, formData *FormData, progressBar *widget.ProgressBar, logMessage func(msg string)) {
+func startBoom(formData *FormData, progressBar *widget.ProgressBar, logMessage func(msg string)) {
 	total := formData.Rounds * len(formData.Phones)
 
 	progressBar.TextFormatter = func() string {

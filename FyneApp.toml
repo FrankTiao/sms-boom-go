@@ -1,0 +1,11 @@
+Website = "https://example.com"
+
+[Details]
+  Icon = "./fyne.png"
+  Name = "SMS Boom Go"
+  ID = "com.github.franktiao.sms-boom-go"
+  Version = "2.0.0"
+  Build = 2
+
+[Source]
+  Repo = "https://github.com/FrankTiao/sms-boom-go"
