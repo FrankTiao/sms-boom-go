@@ -1,3 +1,6 @@
 .idea
 sms-configs-GETAPI.json
 sms-configs-api.json
+build/bin
+node_modules
+frontend/dist

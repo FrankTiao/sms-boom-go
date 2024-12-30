@@ -1,0 +1,25 @@
+{
+    "name": "frontend",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview",
+        "fmt": "npx prettier . --write"
+    },
+    "dependencies": {
+        "@vicons/ionicons5": "^0.13.0",
+        "@vicons/material": "^0.13.0",
+        "@vicons/utils": "^0.1.4",
+        "naive-ui": "^2.40.4",
+        "vue": "^3.2.37"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^3.0.3",
+        "prettier": "3.4.2",
+        "vfonts": "^0.0.3",
+        "vite": "^3.0.7"
+    }
+}
